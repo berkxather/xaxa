@@ -19,13 +19,14 @@ local Tabs = {
     Misc = Window:AddTab({ Title = "Misc", Icon = "settings" })
 }
 
--- Variables for cheat states
-local aimbotEnabled = false
-local espEnabled = false
-local bhopEnabled = false
-local noRecoilEnabled = false
-
 -- Aimbot (Gerçek İşlevsel)
+local aimbotEnabled = false
+local targetPart = "Head"  -- Başlangıçta başa kilitlenme
+local wallProtectionEnabled = false
+local drawFOVEnabled = false
+local lockKey = Enum.KeyCode.LeftShift -- Varsayılan olarak Shift
+local lockButtonEnabled = false
+
 function aimbot()
     while aimbotEnabled do
         wait()
@@ -37,74 +38,65 @@ function aimbot()
 
         for _, v in pairs(game.Players:GetPlayers()) do
             if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                local screenPosition = game:GetService("Workspace").CurrentCamera:WorldToScreenPoint(v.Character.HumanoidRootPart.Position)
-                local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
-                if distance < closestDistance and distance < fov then
-                    closestDistance = distance
-                    closestPlayer = v
+                local target = v.Character:FindFirstChild(targetPart)  -- Hedef vücut parçası
+                if target then
+                    local screenPosition = game:GetService("Workspace").CurrentCamera:WorldToScreenPoint(target.Position)
+                    local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
+                    if distance < closestDistance and distance < fov then
+                        closestDistance = distance
+                        closestPlayer = v
+                    end
                 end
             end
         end
+
         if closestPlayer then
             local char = closestPlayer.Character
             local rootPart = char:FindFirstChild("HumanoidRootPart")
             if rootPart then
+                -- Duvar koruması kontrolü
+                if wallProtectionEnabled then
+                    local ray = Ray.new(game:GetService("Workspace").CurrentCamera.CFrame.Position, rootPart.Position - game:GetService("Workspace").CurrentCamera.CFrame.Position)
+                    local hitPart = game:GetService("Workspace"):FindPartOnRay(ray, game.Players.LocalPlayer.Character)
+                    if hitPart then
+                        -- Eğer ray bir şeyle çarpıyorsa, kilitlenme yapma
+                        continue
+                    end
+                end
+                -- Kilitlenme işlemi
                 game:GetService("Workspace").CurrentCamera.CFrame = CFrame.new(game:GetService("Workspace").CurrentCamera.CFrame.Position, rootPart.Position)
             end
         end
     end
 end
 
--- ESP (Wallhack) İşlevi
-function createESP(player)
-    local espPart = Instance.new("BillboardGui", player.Character)
-    espPart.Size = UDim2.new(0, 50, 0, 50)
-    espPart.StudsOffset = Vector3.new(0, 3, 0)
-    espPart.AlwaysOnTop = true
-    espPart.Enabled = espEnabled
-
-    local espText = Instance.new("TextLabel", espPart)
-    espText.Size = UDim2.new(1, 0, 1, 0)
-    espText.BackgroundTransparency = 1
-    espText.TextColor3 = Color3.fromRGB(255, 0, 0)
-    espText.Text = player.Name
+-- FOV çizimi
+function drawFOV()
+    local camera = game:GetService("Workspace").CurrentCamera
+    local fovCircle = Instance.new("Frame", game.CoreGui)
+    fovCircle.Size = UDim2.new(0, 200, 0, 200)
+    fovCircle.Position = UDim2.new(0.5, -100, 0.5, -100)
+    fovCircle.BorderSizePixel = 2
+    fovCircle.BorderColor3 = Color3.fromRGB(255, 0, 0)
+    fovCircle.BackgroundTransparency = 0.5
+    while drawFOVEnabled do
+        wait(0.1)
+        fovCircle.Position = UDim2.new(0.5, -fovCircle.Size.X.Offset / 2, 0.5, -fovCircle.Size.Y.Offset / 2)
+    end
+    fovCircle:Destroy()
 end
 
-function toggleESP()
-    for _, v in pairs(game.Players:GetPlayers()) do
-        if v.Character then
-            createESP(v)
+-- Kilitlenme düğmesi
+local lockButtonPressed = false
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent then
+        if lockButtonEnabled and input.KeyCode == lockKey then
+            lockButtonPressed = true
         end
     end
-end
+end)
 
--- Bhop (Otomatik Zıplama)
-function bhop()
-    while bhopEnabled do
-        wait()
-        local player = game.Players.LocalPlayer
-        local mouse = player:GetMouse()
-
-        if mouse.KeyDown == Enum.KeyCode.Space then
-            game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-            game.Players.LocalPlayer.Character.Humanoid.Jump = true
-        end
-    end
-end
-
--- No Recoil (Geri Tepme Kaldırma)
-function noRecoil()
-    while noRecoilEnabled do
-        wait()
-        local character = game.Players.LocalPlayer.Character
-        if character and character:FindFirstChild("Humanoid") then
-            local humanoid = character.Humanoid
-            humanoid.PlatformStand = true
-        end
-    end
-end
-
--- Aim Sekmesi
+-- Sekmelerdeki ayarlar
 Tabs.Aim:AddToggle("AimbotToggle", {
     Title = "Aimbot",
     Description = "Aimbot'u etkinleştir",
@@ -114,6 +106,55 @@ Tabs.Aim:AddToggle("AimbotToggle", {
         if aimbotEnabled then
             aimbot()
         end
+    end
+})
+
+Tabs.Aim:AddDropdown("TargetPartDropdown", {
+    Title = "Kilitleme Parçası",
+    Description = "Vücut parçasını seç",
+    Default = "Head",
+    Options = {"Head", "Torso", "Legs", "Arms"},
+    Callback = function(selected)
+        targetPart = selected
+    end
+})
+
+Tabs.Aim:AddToggle("WallProtectionToggle", {
+    Title = "Wall Protection",
+    Description = "Duvarın arkasındaki hedefe kilitlenme",
+    Default = false,
+    Callback = function(state)
+        wallProtectionEnabled = state
+    end
+})
+
+Tabs.Aim:AddToggle("DrawFOVToggle", {
+    Title = "Draw FOV",
+    Description = "FOV'yi ekranda göster",
+    Default = false,
+    Callback = function(state)
+        drawFOVEnabled = state
+        if drawFOVEnabled then
+            drawFOV()
+        end
+    end
+})
+
+Tabs.Aim:AddTextBox("LockButtonTextBox", {
+    Title = "Kilitlenme Düğmesi",
+    Description = "Hangi tuşa kilitleneceğinizi girin (örneğin: LeftShift)",
+    Default = "LeftShift",
+    Callback = function(text)
+        lockKey = Enum.KeyCode[text]
+    end
+})
+
+Tabs.Aim:AddToggle("LockButtonEnabledToggle", {
+    Title = "Kilitlenme Düğmesi Aktif",
+    Description = "Kilitlenmek için düğmeyi etkinleştir",
+    Default = false,
+    Callback = function(state)
+        lockButtonEnabled = state
     end
 })
 
@@ -129,14 +170,13 @@ Tabs.Aim:AddSlider("FOVSlider", {
     end
 })
 
--- ESP Sekmesi
+-- Diğer sekmeler
 Tabs.ESP:AddToggle("WallhackToggle", {
     Title = "Wallhack",
     Description = "Duvarların arkasını gör",
     Default = false,
     Callback = function(state)
-        espEnabled = state
-        toggleESP()
+        print("Wallhack durumu:", state)
     end
 })
 
@@ -149,16 +189,12 @@ Tabs.ESP:AddColorpicker("ESPColor", {
     end
 })
 
--- Gun Sekmesi
 Tabs.Gun:AddToggle("NoRecoilToggle", {
     Title = "No Recoil",
     Description = "Geri tepme kaldır",
     Default = false,
     Callback = function(state)
-        noRecoilEnabled = state
-        if noRecoilEnabled then
-            noRecoil()
-        end
+        print("No Recoil durumu:", state)
     end
 })
 
@@ -171,16 +207,12 @@ Tabs.Gun:AddToggle("NoSpreadToggle", {
     end
 })
 
--- Misc Sekmesi
 Tabs.Misc:AddToggle("BhopToggle", {
     Title = "Bhop",
     Description = "Otomatik zıplama",
     Default = false,
     Callback = function(state)
-        bhopEnabled = state
-        if bhopEnabled then
-            bhop()
-        end
+        print("Bhop durumu:", state)
     end
 })
 
