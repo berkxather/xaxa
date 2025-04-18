@@ -1,61 +1,103 @@
-local Venus = loadstring(game:HttpGet("https://raw.githubusercontent.com/venoscripts/venus/master/venoscript.lua"))()
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/AbstractPoo/Main/main/Fluent/Loader.lua"))()
+local Window = Fluent:CreateWindow({
+    Title = "Xather Cheat",
+    SubTitle = "By Hezli Meymun",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.RightShift
+})
 
--- Menü Tasarımı
-local window = Venus:CreateWindow("Exunys Aimbot Settings", 500, 400)
+local AimbotTab = Window:AddTab({ Title = "Aimbot", Icon = "Target" })
+local FOVTab = Window:AddTab({ Title = "ESP", Icon = "Circle" })
+local OtherTab = Window:AddTab({ Title = "Diğer", Icon = "Settings" })
 
--- Aimbot Sekmesi
-local aimbotTab = window:CreateTab("Aimbot")
+--// Aimbot Ayarları
+AimbotTab:AddToggle("enabled", {
+    Title = "Aimbot Aktif",
+    Default = getgenv().Aimbot.Settings.Enabled,
+    Callback = function(v)
+        getgenv().Aimbot.Settings.Enabled = v
+    end
+})
 
--- Aimbot Açma/Kapama Butonu
-aimbotTab:CreateToggle("Enable Aimbot", function(value)
-    getgenv().Aimbot.Enabled = value
-end)
+AimbotTab:AddToggle("teamcheck", {
+    Title = "Takım Kontrolü",
+    Default = getgenv().Aimbot.Settings.TeamCheck,
+    Callback = function(v)
+        getgenv().Aimbot.Settings.TeamCheck = v
+    end
+})
 
--- Hedef kilitli parça seçici (Baş/Chest)
-aimbotTab:CreateDropdown("Lock Part", {"Head", "Torso", "Legs"}, function(selected)
-    getgenv().Aimbot.Settings.LockPart = selected
-end)
+AimbotTab:AddToggle("alivecheck", {
+    Title = "Canlı Kontrolü",
+    Default = getgenv().Aimbot.Settings.AliveCheck,
+    Callback = function(v)
+        getgenv().Aimbot.Settings.AliveCheck = v
+    end
+})
 
--- Hassasiyet Ayarı
-aimbotTab:CreateSlider("Sensitivity", 0, 10, 0, function(value)
-    getgenv().Aimbot.Settings.Sensitivity = value
-end)
+AimbotTab:AddToggle("wallcheck", {
+    Title = "Duvar Kontrolü",
+    Default = getgenv().Aimbot.Settings.WallCheck,
+    Callback = function(v)
+        getgenv().Aimbot.Settings.WallCheck = v
+    end
+})
 
--- FOV Sekmesi
-local fovTab = window:CreateTab("FOV Settings")
+AimbotTab:AddSlider("sensitivity", {
+    Title = "Hassasiyet",
+    Min = 0,
+    Max = 1,
+    Default = getgenv().Aimbot.Settings.Sensitivity,
+    Decimals = 2,
+    Callback = function(v)
+        getgenv().Aimbot.Settings.Sensitivity = v
+    end
+})
 
--- FOV Görünürlük Butonu
-fovTab:CreateToggle("Enable FOV", function(value)
-    getgenv().Aimbot.FOVSettings.Enabled = value
-end)
+AimbotTab:AddToggle("thirdperson", {
+    Title = "3. Şahıs Desteği",
+    Default = getgenv().Aimbot.Settings.ThirdPerson,
+    Callback = function(v)
+        getgenv().Aimbot.Settings.ThirdPerson = v
+    end
+})
 
--- FOV Miktarı Ayarı
-fovTab:CreateSlider("FOV Amount", 0, 200, 90, function(value)
-    getgenv().Aimbot.FOVSettings.Amount = value
-end)
+AimbotTab:AddSlider("thirdperson_sens", {
+    Title = "3. Şahıs Hassasiyeti",
+    Min = 0.1,
+    Max = 5,
+    Default = getgenv().Aimbot.Settings.ThirdPersonSensitivity,
+    Decimals = 1,
+    Callback = function(v)
+        getgenv().Aimbot.Settings.ThirdPersonSensitivity = v
+    end
+})
 
--- FOV Renk Seçici
-fovTab:CreateColorPicker("FOV Color", Color3.fromRGB(255, 255, 255), function(color)
-    getgenv().Aimbot.FOVSettings.Color = color
-end)
+AimbotTab:AddInput("triggerkey", {
+    Title = "Tetik Tuşu",
+    Default = getgenv().Aimbot.Settings.TriggerKey,
+    Placeholder = "MouseButton2",
+    Callback = function(v)
+        getgenv().Aimbot.Settings.TriggerKey = v
+    end
+})
 
--- FOV Şeffaflık Ayarı
-fovTab:CreateSlider("FOV Transparency", 0, 1, 0.5, function(value)
-    getgenv().Aimbot.FOVSettings.Transparency = value
-end)
+AimbotTab:AddToggle("toggle_mode", {
+    Title = "Toggle Modu",
+    Default = getgenv().Aimbot.Settings.Toggle,
+    Callback = function(v)
+        getgenv().Aimbot.Settings.Toggle = v
+    end
+})
 
--- Kaydet ve Çıkış Butonları
-local functionsTab = window:CreateTab("Functions")
-
--- Ayarları Kaydet Butonu
-functionsTab:CreateButton("Save Settings", function()
-    SaveSettings() -- Önceden tanımlı SaveSettings fonksiyonu kullanılacak
-end)
-
--- Çıkış Butonu
-functionsTab:CreateButton("Exit", function()
-    getgenv().Aimbot.Functions:Exit()
-end)
-
--- Menü Göster
-window:Show()
+AimbotTab:AddInput("lockpart", {
+    Title = "Kilit Noktası",
+    Default = getgenv().Aimbot.Settings.LockPart,
+    Placeholder = "Head",
+    Callback = function(v)
+        getgenv().Aimbot.Settings.LockPart = v
+    end
+})
