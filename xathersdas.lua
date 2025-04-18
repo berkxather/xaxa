@@ -67,10 +67,11 @@ Tabs.Aim:AddToggle("TeamCheck", {
     end
 })
 
+-- AimPart Dropdown (Parçayı Seçme)
 Tabs.Aim:AddDropdown("AimPart", {
     Title = "Kilitlenme Noktası",
     Default = _G.AimPart,
-    Options = {"Head", "Chest", "Legs"},
+    Options = {"Head", "Torso", "LeftLeg", "RightLeg", "LeftArm", "RightArm", "HumanoidRootPart"},
     Callback = function(value)
         _G.AimPart = value
     end
