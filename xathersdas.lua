@@ -1,116 +1,46 @@
--- Fluent Library Setup
-local Fluent = loadstring(game:HttpGet("https://github.com/ActualMasterOogway/Fluent-Renewed/releases/latest/download/Fluent.luau"))()
+-- VapeV4 Kütüphanesi yükleme
+local VapeV4 = loadstring(game:HttpGet("https://raw.githubusercontent.com/VapeV4/VapeV4/master/Source/Loader.lua"))()
 
-local Window = Fluent:CreateWindow({
-    Title = "Xather Cheat",
-    SubTitle = "by Hezli Meymun",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Acrylic = true,
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftAlt
-})
-
-local Tabs = {
-    Aim = Window:AddTab({ Title = "Aim", Icon = "target" }),
-    ESP = Window:AddTab({ Title = "ESP", Icon = "eye" }),
-    Gun = Window:AddTab({ Title = "Gun", Icon = "crosshair" }),
-    Misc = Window:AddTab({ Title = "Misc", Icon = "settings" })
-}
-
--- Variables
+-- Kamera, oyuncu, servisleri tanımla
 local Camera = workspace.CurrentCamera
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local Holding = false
 
-_G.AimbotEnabled = false
+-- Ayarlar
+_G.AimbotEnabled = true
 _G.TeamCheck = false
 _G.AimPart = "Head"
-_G.Sensitivity = 0.1
-_G.CircleSides = 64
+_G.Sensitivity = 0.1 -- 0.1 saniyede kilitlenme
+_G.CircleRadius = 80
 _G.CircleColor = Color3.fromRGB(255, 255, 255)
 _G.CircleTransparency = 0.7
-_G.CircleRadius = 80
-_G.CircleFilled = false
 _G.CircleVisible = true
-_G.CircleThickness = 0
+_G.CircleThickness = 1
 
+local Holding = false
+
+-- FOV Circle tanımlaması
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 FOVCircle.Radius = _G.CircleRadius
-FOVCircle.Filled = _G.CircleFilled
+FOVCircle.Filled = false
 FOVCircle.Color = _G.CircleColor
 FOVCircle.Visible = _G.CircleVisible
 FOVCircle.Transparency = _G.CircleTransparency
-FOVCircle.NumSides = _G.CircleSides
 FOVCircle.Thickness = _G.CircleThickness
 
--- Aimbot Settings Menu
-Tabs.Aim:AddToggle("AimbotToggle", {
-    Title = "Aimbot",
-    Description = "Aimbot'u etkinleştir",
-    Default = _G.AimbotEnabled,
-    Callback = function(state)
-        _G.AimbotEnabled = state
-    end
-})
-
-Tabs.Aim:AddToggle("TeamCheck", {
-    Title = "Takım Kontrolü",
-    Description = "Sadece düşman oyuncularına kilitlen",
-    Default = _G.TeamCheck,
-    Callback = function(state)
-        _G.TeamCheck = state
-    end
-})
-
--- AimPart Dropdown (Parçayı Seçme)
-Tabs.Aim:AddDropdown("AimPart", {
-    Title = "Kilitlenme Noktası",
-    Default = _G.AimPart,
-    Options = {"Head", "Torso", "LeftLeg", "RightLeg", "LeftArm", "RightArm", "HumanoidRootPart"},
-    Callback = function(value)
-        _G.AimPart = value
-    end
-})
-
-Tabs.Aim:AddSlider("Sensitivity", {
-    Title = "Hassasiyet",
-    Description = "Aimbot hassasiyetini ayarlayın",
-    Default = _G.Sensitivity,
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-    Callback = function(value)
-        _G.Sensitivity = value
-    end
-})
-
-Tabs.Aim:AddSlider("CircleRadius", {
-    Title = "FOV Çevresi",
-    Description = "FOV çemberinin çapını ayarlayın",
-    Default = _G.CircleRadius,
-    Min = 10,
-    Max = 200,
-    Rounding = 0,
-    Callback = function(value)
-        _G.CircleRadius = value
-    end
-})
-
--- Get Closest Player
+-- En yakın düşmanı bulma fonksiyonu
 local function GetClosestPlayer()
     local MaximumDistance = _G.CircleRadius
     local Target = nil
 
     for _, v in next, Players:GetPlayers() do
         if v.Name ~= LocalPlayer.Name then
-            if _G.TeamCheck == true then
-                if v.Team ~= LocalPlayer.Team then
-                    if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            if _G.TeamCheck and v.Team ~= LocalPlayer.Team then
+                if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                    if v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
                         local ScreenPoint = Camera:WorldToScreenPoint(v.Character.HumanoidRootPart.Position)
                         local VectorDistance = (Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2.new(ScreenPoint.X, ScreenPoint.Y)).Magnitude
                         if VectorDistance < MaximumDistance then
@@ -118,42 +48,24 @@ local function GetClosestPlayer()
                         end
                     end
                 end
-            else
+            elseif not _G.TeamCheck then
                 if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                    local ScreenPoint = Camera:WorldToScreenPoint(v.Character.HumanoidRootPart.Position)
-                    local VectorDistance = (Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2.new(ScreenPoint.X, ScreenPoint.Y)).Magnitude
-                    if VectorDistance < MaximumDistance then
-                        Target = v
+                    if v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
+                        local ScreenPoint = Camera:WorldToScreenPoint(v.Character.HumanoidRootPart.Position)
+                        local VectorDistance = (Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2.new(ScreenPoint.X, ScreenPoint.Y)).Magnitude
+                        if VectorDistance < MaximumDistance then
+                            Target = v
+                        end
                     end
                 end
             end
         end
     end
+
     return Target
 end
 
--- Aimbot Implementation
-RunService.RenderStepped:Connect(function()
-    FOVCircle.Position = Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
-    FOVCircle.Radius = _G.CircleRadius
-    FOVCircle.Filled = _G.CircleFilled
-    FOVCircle.Color = _G.CircleColor
-    FOVCircle.Visible = _G.CircleVisible
-    FOVCircle.Transparency = _G.CircleTransparency
-    FOVCircle.NumSides = _G.CircleSides
-    FOVCircle.Thickness = _G.CircleThickness
-
-    if Holding and _G.AimbotEnabled then
-        local closestPlayer = GetClosestPlayer()
-        if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild(_G.AimPart) then
-            local targetPosition = closestPlayer.Character[_G.AimPart].Position
-            local cameraToTarget = CFrame.new(Camera.CFrame.Position, targetPosition)
-            TweenService:Create(Camera, TweenInfo.new(_G.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = cameraToTarget}):Play()
-        end
-    end
-end)
-
--- Input Handling for Aimbot (Right Click)
+-- Mouse tuşuna basıldığında hedefe kilitlenme
 UserInputService.InputBegan:Connect(function(Input)
     if Input.UserInputType == Enum.UserInputType.MouseButton2 then
         Holding = true
@@ -165,3 +77,54 @@ UserInputService.InputEnded:Connect(function(Input)
         Holding = false
     end
 end)
+
+-- Menü ve Aimbot ayarları için VapeV4 menüsünü oluşturma
+local MainMenu = VapeV4.NewMenu("Aimbot Menu")
+
+-- Aimbot sekmesi
+local AimbotTab = MainMenu:AddTab("Aimbot")
+AimbotTab:AddToggle("Aimbot Enabled", function(value)
+    _G.AimbotEnabled = value
+end, _G.AimbotEnabled)
+
+AimbotTab:AddToggle("Team Check", function(value)
+    _G.TeamCheck = value
+end, _G.TeamCheck)
+
+AimbotTab:AddDropdown("Aim Part", {"Head", "Torso", "HumanoidRootPart"}, function(value)
+    _G.AimPart = value
+end, _G.AimPart)
+
+AimbotTab:AddSlider("Sensitivity", 0, 1, function(value)
+    _G.Sensitivity = value
+end, _G.Sensitivity)
+
+AimbotTab:AddColorPicker("FOV Circle Color", function(color)
+    _G.CircleColor = color
+    FOVCircle.Color = color
+end, _G.CircleColor)
+
+-- FOV Circle sekmesi
+local VisualTab = MainMenu:AddTab("Visuals")
+VisualTab:AddSlider("FOV Circle Radius", 20, 200, function(value)
+    _G.CircleRadius = value
+    FOVCircle.Radius = value
+end, _G.CircleRadius)
+
+VisualTab:AddToggle("FOV Circle Visible", function(value)
+    _G.CircleVisible = value
+    FOVCircle.Visible = value
+end, _G.CircleVisible)
+
+-- Render işlemi
+RunService.RenderStepped:Connect(function()
+    if _G.AimbotEnabled and Holding then
+        local Target = GetClosestPlayer()
+        if Target then
+            TweenService:Create(Camera, TweenInfo.new(_G.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFrame.new(Camera.CFrame.Position, Target.Character[_G.AimPart].Position)}):Play()
+        end
+    end
+end)
+
+-- Menü açma
+MainMenu:Show()
